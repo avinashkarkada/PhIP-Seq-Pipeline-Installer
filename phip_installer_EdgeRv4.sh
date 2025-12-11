@@ -10,7 +10,8 @@ if ! command -v module >/dev/null 2>&1; then
     [[ -f "$f" ]] && . "$f"
   done
 fi
-module load r/3.6.3 >/dev/null 2>&1 || module load r/4.0.2 >/dev/null 2>&1 || die "Cannot load R (3.6.3 or 4.0.2)"
+
+module load r/4.3.0 >/dev/null 2>&1 || die "Need R >= 4.3.0 for edgeR 4.x"
 module load curl/7.83.0  >/dev/null 2>&1 || die "Cannot load curl/7.83.0"
 module load bzip2/1.0.8  >/dev/null 2>&1 || true
 module load libjpeg/9c    >/dev/null 2>&1 || true
@@ -47,23 +48,19 @@ fi
 mkdir -p "${R_LIBS_USER}"
 log "R user library: ${R_LIBS_USER}"
 
-SNAP="https://packagemanager.posit.co/cran/2021-06-15"
-if curl -fsI "${SNAP}/src/contrib/PACKAGES.gz" >/dev/null 2>&1; then
-  CRAN="${SNAP}"
-  log "Using CRAN snapshot: ${CRAN}"
-else
-  CRAN="https://cloud.r-project.org"
-  log "Snapshot unreachable; falling back to CRAN: ${CRAN}"
-fi
+CRAN="https://cloud.r-project.org"
+log "Using CRAN mirror: ${CRAN}"
 export CRAN
 
 export MAKEFLAGS="-j1"
 export PKG_BUILD_NCPUS="1"
-TMPDIR="$(mktemp -d "/tmp/${USER}/r-tmp-XXXXXX")"
+TMP_BASE="/tmp/${USER}"
+mkdir -p "${TMP_BASE}" || die "Cannot create temporary base directory: ${TMP_BASE}"
+TMPDIR="$(mktemp -d "${TMP_BASE}/r-tmp-XXXXXX")" || die "mktemp failed to create temporary directory"
 export TMPDIR
 log "TMPDIR: ${TMPDIR}"
 log "MAKEFLAGS=${MAKEFLAGS}, PKG_BUILD_NCPUS=${PKG_BUILD_NCPUS}"
-trap 'rm -rf "${TMPDIR}" || true' EXIT
+trap 'rm -rf "${TMPDIR:-}" || true' EXIT
 
 set +e
 Rscript --vanilla - <<'RS'
@@ -207,6 +204,17 @@ if (requireNamespace("BiocManager", quietly=TRUE)) {
 } else {
   message("[WARN] BiocManager unavailable; skipping Bioc packages")
   failed <- c(failed, "edgeR","Rsubread","Rsamtools","ShortRead")
+}
+
+## edgeR version sanity check (require v4+)
+if (requireNamespace("edgeR", quietly = TRUE)) {
+  ver <- as.character(packageVersion("edgeR"))
+  message("[INFO] edgeR version installed: ", ver)
+  if (utils::compareVersion(ver, "4.0.0") < 0) {
+    stop("edgeR < 4.0.0 installed; need v4+ for this pipeline.")
+  }
+} else {
+  stop("edgeR not installed; need edgeR v4+ for this pipeline.")
 }
 
 # GitHub

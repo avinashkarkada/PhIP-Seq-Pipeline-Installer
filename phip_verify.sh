@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-module load r/4.0.2 >/dev/null 2>&1 || module load r/3.6.3
+#module load r/4.0.2 >/dev/null 2>&1 || module load r/3.6.3
+module load r/3.6.3
 module load curl/7.83.0 bzip2/1.0.8 libjpeg/9c libpng/1.6.37 >/dev/null 2>&1 || true
 
 R_FULL="$(Rscript --vanilla -e 'rv<-R.version; cat(paste(rv$major, rv$minor, sep="."))')"
