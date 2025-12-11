@@ -4,7 +4,7 @@ To run the **phipDB** pipeline, you must install several version-specific module
 
 The installer script is located here on github and on Rockfish at:
 ```bash
-/home/$USER/data_hlarman1/PhIPdb/Software/Phipseq_dependencies
+/home/$USER/data_hlarman1/PhIPdb/phipseq_pipeline/PhIP-Seq-Pipeline-Installer/
 ```
 By default, all required R libraries are installed into the user’s local R library path. The script also accepts an optional argument pointing to a custom writable directory where you would like the libraries to be installed.
 
