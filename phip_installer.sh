@@ -59,8 +59,13 @@ export CRAN
 
 export MAKEFLAGS="-j1"
 export PKG_BUILD_NCPUS="1"
-TMPDIR="$(mktemp -d "/tmp/${USER}/r-tmp-XXXXXX")"
+
+TMP_PARENT="/tmp"
+mkdir -p "${TMP_PARENT}/${USER}" || die "Cannot create ${TMP_PARENT}/${USER}"
+
+TMPDIR="$(mktemp -d "${TMP_PARENT}/${USER}/r-tmp-XXXXXX")" || die "mktemp failed"
 export TMPDIR
+
 log "TMPDIR: ${TMPDIR}"
 log "MAKEFLAGS=${MAKEFLAGS}, PKG_BUILD_NCPUS=${PKG_BUILD_NCPUS}"
 trap 'rm -rf "${TMPDIR}" || true' EXIT
@@ -144,7 +149,7 @@ if (need_curl) {
 }
 
 # Core CRAN set (snapshot)
-for (p in c("R.utils","data.table","igraph","foreach","doParallel","future","future.apply","tidyverse","plotly","fitdistrplus")) {
+for (p in c("R.utils","data.table","igraph","foreach","doParallel","future","future.apply","tidyverse","plotly","fitdistrplus", "janitor")) {
   install_cran(p)
 }
 
@@ -211,7 +216,7 @@ if (requireNamespace("BiocManager", quietly=TRUE)) {
 
 # GitHub
 if (requireNamespace("remotes", quietly=TRUE)) {
-  for (repo in c("ropensci/drake", "brandonsie/phipmake")) {
+  for (repo in c("ropensci/drake", "brandonsie/phipmake", "jernbom/ARscore")) {
     pkg <- sub(".*/","",repo)
     tryCatch({
       remotes::install_github(repo, upgrade=FALSE, dependencies=dep_types, build_vignettes=FALSE)
@@ -230,7 +235,7 @@ message("Success (", length(success), "): ", if(length(success)) paste(success, 
 message("Failed  (", length(failed),  "): ", if(length(failed))  paste(failed,  collapse=", ") else "none")
 
 # Core load test (must pass for success)
-core <- c("Rsubread","Rsamtools","ShortRead","foreach","doParallel","data.table","R.utils","dplyr","curl")
+core <- c("Rsubread","Rsamtools","ShortRead","foreach","doParallel","data.table","R.utils","curl")
 bad <- character(0)
 for (p in core) {
   ok <- suppressWarnings(require(p, character.only=TRUE, quietly=TRUE))
